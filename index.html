@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Scrubber Lab · Operational Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#f5f7fa;--surface:#fff;--surface2:#f0f4f9;--border:#dde3ed;--border2:#c8d2e2;
+  --blue:#2563eb;--blue-lt:#eff4ff;--cyan:#0891b2;
+  --green:#059669;--green-lt:#ecfdf5;
+  --amber:#d97706;--amber-lt:#fffbeb;
+  --red:#dc2626;--red-lt:#fef2f2;
+  --purple:#7c3aed;--purple-lt:#f5f3ff;
+  --orange:#ea580c;--orange-lt:#fff7ed;
+  --teal:#0f766e;--teal-lt:#f0fdfa;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-name{font-size:14px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.5px;text-transform:uppercase}
+.header-right{display:flex;align-items:center;gap:16px}
+.sync-status{display:flex;align-items:center;gap:5px;font-size:10px;font-family:'DM Mono',monospace;padding:3px 9px;border-radius:20px;border:1px solid var(--border)}
+.sync-status.ok{background:var(--green-lt);color:var(--green);border-color:#a7f3d0}
+.sync-status.err{background:var(--red-lt);color:var(--red);border-color:#fca5a5}
+.sync-status.loading{background:var(--amber-lt);color:var(--amber);border-color:#fcd34d}
+.live-pill{display:flex;align-items:center;gap:5px;background:var(--green-lt);border:1px solid #a7f3d0;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.clock{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)}
+
+/* TABS */
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto}
+.tab-btn{padding:12px 16px;font-size:12px;font-weight:500;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;display:flex;align-items:center;gap:6px;transition:color .15s;font-family:'DM Sans','Noto Sans KR',sans-serif;white-space:nowrap}
+.tab-btn:hover{color:var(--teal)}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+
+/* PAGE */
+.page{padding:20px 24px;max-width:100%;margin:0 auto}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fadeUp .18s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:600;color:var(--text2)}
+
+/* FORM */
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px;letter-spacing:.3px;text-transform:uppercase}
+.form-input,.form-select{width:100%;padding:8px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:'DM Sans','Noto Sans KR',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;appearance:none}
+.form-input:focus,.form-select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.1)}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-textarea{width:100%;padding:8px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:12px;font-family:'DM Sans','Noto Sans KR',sans-serif;outline:none;resize:none;transition:border-color .15s}
+.form-textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.1)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans','Noto Sans KR',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:#0f5c56}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#047857}
+.btn-outline{background:var(--surface);color:var(--text2);border:1px solid var(--border2)}
+.btn-outline:hover{background:var(--surface2)}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);padding:9px 14px}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:5px 12px;font-size:11px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.3px;white-space:nowrap}
+.badge-green{background:var(--green-lt);color:var(--green);border:1px solid #a7f3d0}
+.badge-teal{background:var(--teal-lt);color:var(--teal);border:1px solid #99f6e4}
+.badge-red{background:var(--red-lt);color:var(--red);border:1px solid #fca5a5}
+.badge-amber{background:var(--amber-lt);color:var(--amber);border:1px solid #fcd34d}
+.badge-gray{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px}
+.chip-power{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.chip-tank{background:var(--teal-lt);color:var(--teal);border:1px solid #99f6e4}
+.chip-gas{background:var(--purple-lt);color:var(--purple);border:1px solid #c4b5fd}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;font-size:12px;font-weight:500;z-index:9999;box-shadow:var(--shadow-lg);transform:translateX(120%);transition:transform .25s;display:flex;align-items:center;gap:8px;max-width:340px}
+.toast.show{transform:translateX(0)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:580px;max-height:92vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.modal-header{padding:16px 20px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:700}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px 5px;border-radius:5px;transition:all .15s}
+.modal-close:hover{background:var(--surface2);color:var(--text)}
+.modal-body{padding:16px 20px}
+.modal-footer{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-icon{font-size:18px;margin-bottom:8px}
+.stat-val{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;line-height:1}
+.stat-val span{font-size:13px;font-weight:500;color:var(--text3)}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:5px;font-weight:500}
+
+/* ══ TAB 1: 현황 대시보드 ══ */
+.ports-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.port-card{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;transition:all .2s;cursor:pointer}
+.port-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.port-card.empty{border-top:3px solid var(--green)}
+.port-card.active{border-top:3px solid var(--teal)}
+.port-card.renew{border-top:3px solid var(--red);background:#fffafa}
+.port-card-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px 7px}
+.port-id{font-size:16px;font-weight:800;font-family:'DM Mono',monospace}
+.port-body{padding:0 14px 12px;display:flex;flex-direction:column;gap:4px}
+.port-row{display:flex;align-items:flex-start;gap:6px;font-size:11px}
+.port-key{color:var(--text3);width:50px;min-width:50px;font-weight:500;white-space:nowrap}
+.port-val{font-weight:600;line-height:1.3;word-break:break-all}
+.port-dates{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+.port-remark{font-size:10px;color:var(--text3);margin-top:4px;padding-top:5px;border-top:1px solid var(--border);line-height:1.4}
+.renew-banner{background:#fef2f2;border-top:1px solid #fecaca;padding:4px 14px;font-size:10px;font-weight:700;color:var(--red)}
+
+/* 현황 대시보드 체크시트 미리보기 */
+.dash-check-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow)}
+.dash-check-table{border-collapse:separate;border-spacing:0;min-width:900px;width:100%}
+.dash-check-table th,.dash-check-table td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:5px 4px;font-size:10px;text-align:center}
+.dash-check-table th{background:var(--surface2);font-weight:700;color:var(--text2);position:sticky;top:0;z-index:10}
+.dash-check-table .col-label{text-align:left;padding:5px 10px;min-width:120px;position:sticky;left:0;background:var(--surface2);z-index:20;border-right:2px solid var(--border2)!important;font-weight:600}
+.dash-check-table td.col-label{background:var(--surface);z-index:5}
+.dash-check-table .col-sub{font-size:9px;color:var(--text3)}
+.dash-check-table .today-col{background:rgba(15,118,110,.08)!important;font-weight:700;color:var(--teal)}
+.dash-check-table .use-O{background:#d1fae5;color:#065f46;font-weight:700}
+.dash-check-table .use-T{background:#dbeafe;color:#1e40af;font-weight:700}
+.dash-check-table .use-X{background:var(--red-lt);color:var(--red);font-weight:700}
+
+/* ══ 결재란 ══ */
+.approval-box{display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden;width:240px;flex-shrink:0}
+.approval-col{flex:1;border-right:1px solid var(--border2);display:flex;flex-direction:column}
+.approval-col:last-child{border-right:none}
+.approval-role{background:var(--surface2);padding:5px 4px;text-align:center;font-size:9px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border2)}
+.approval-sign{min-height:48px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:background .15s}
+.approval-sign:hover{background:var(--teal-lt)}
+.approval-sign.signed{background:var(--green-lt)}
+.approval-name{font-size:11px;font-weight:700;color:var(--teal)}
+.approval-date{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+.approval-btn{font-size:9px;color:var(--text3)}
+
+/* ══ CHECK SHEET ══ */
+.cs-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.cs-meta{display:flex;flex-direction:column;gap:8px}
+.cs-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.month-nav{display:flex;align-items:center;gap:4px}
+.month-nav-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.month-nav-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-lt)}
+.month-display{font-size:14px;font-weight:700;padding:0 8px;font-family:'DM Mono',monospace}
+.cs-table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow)}
+.cs-table{border-collapse:separate;border-spacing:0;min-width:1200px;width:100%}
+.cs-table th,.cs-table td{border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cs-th{background:var(--surface2);padding:6px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--text2);position:sticky;top:0;z-index:10;white-space:nowrap}
+.cs-th-label{text-align:left;padding:6px 10px;min-width:160px;position:sticky;left:0;background:var(--surface2);z-index:20;border-right:2px solid var(--border2)!important}
+.cs-td-label{position:sticky;left:0;background:var(--surface);z-index:5;border-right:2px solid var(--border2)!important;padding:5px 10px;font-size:11px;font-weight:600}
+.cs-td-sub{font-size:10px;font-weight:400;color:var(--text3)}
+.cs-day-col{min-width:52px;padding:3px}
+.cs-day-col.today-col th{background:rgba(15,118,110,.12)!important}
+.cs-today-header{background:rgba(15,118,110,.15)!important;color:var(--teal)!important;font-weight:700!important;border-bottom:2px solid var(--teal)!important}
+.cs-td-today{background:rgba(15,118,110,.06)!important}
+.cs-select{width:100%;border:1px solid var(--border);border-radius:4px;font-size:10px;padding:2px 3px;background:var(--surface);appearance:none;text-align:center;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.cs-select:focus{border-color:var(--teal);outline:none}
+.cs-select.val-O{background:#d1fae5;border-color:#10b981;color:#065f46;font-weight:700}
+.cs-select.val-T{background:#dbeafe;border-color:#3b82f6;color:#1e40af;font-weight:700}
+.cs-select.val-X{background:var(--red-lt);border-color:var(--red);color:var(--red);font-weight:700}
+.cs-time-input{width:100%;border:1px solid var(--border);border-radius:4px;font-size:10px;padding:2px 3px;background:var(--surface);font-family:'DM Mono',monospace;text-align:center;outline:none}
+.cs-time-input:focus{border-color:var(--teal)}
+.sunday-col{background:rgba(220,38,38,.03)}
+.saturday-col{background:rgba(37,99,235,.03)}
+
+/* 이상시 조치 테이블 */
+.issue-table{width:100%;border-collapse:collapse;font-size:11px}
+.issue-table th{background:var(--surface2);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);border-bottom:2px solid var(--border2)}
+.issue-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.issue-table tr:last-child td{border-bottom:none}
+.issue-table tr:hover td{background:var(--surface2)}
+.issue-input{width:100%;border:none;background:transparent;font-size:11px;font-family:'DM Sans','Noto Sans KR',sans-serif;outline:none}
+
+/* ══ EXIT CHECKLIST ══ */
+.checklist-items{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.checklist-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;user-select:none}
+.checklist-item.checked{border-color:var(--green);background:var(--green-lt)}
+.ci-num{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;transition:all .15s}
+.checklist-item.checked .ci-num{background:var(--green);border-color:var(--green);color:#fff}
+.ci-text{font-size:12px;line-height:1.5;flex:1}
+.checklist-item.checked .ci-text{color:var(--green);font-weight:500}
+.check-progress{height:5px;background:var(--border);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.check-progress-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:3px;transition:width .3s}
+.exit-record{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--surface2);border-radius:7px;font-size:11px}
+.er-time{font-family:'DM Mono',monospace;color:var(--teal);font-weight:600;white-space:nowrap;font-size:10px}
+.er-name{font-weight:600}
+
+/* ══ MACHINE ══ */
+.equip-list{display:flex;flex-direction:column;gap:4px}
+.equip-item{padding:9px 12px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-weight:500;transition:all .15s;line-height:1.35}
+.equip-item:hover{border-color:var(--teal);background:var(--teal-lt)}
+.equip-item.sel{border-color:var(--teal);background:var(--teal-lt);font-weight:700;color:var(--teal)}
+.insp-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow)}
+.insp-table{border-collapse:separate;border-spacing:0;width:100%}
+.insp-table th,.insp-table td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:7px 10px;font-size:11px}
+.insp-table th{background:var(--surface2);font-size:10px;font-weight:700;color:var(--text2);text-align:center;position:sticky;top:0;z-index:10;white-space:nowrap}
+.insp-table .th-item{text-align:left;position:sticky;left:0;background:var(--surface2);z-index:20;min-width:240px;border-right:2px solid var(--border2)!important}
+.insp-table td.td-item{position:sticky;left:0;background:var(--surface);z-index:5;border-right:2px solid var(--border2)!important;font-size:11px;line-height:1.4}
+.ox-toggle{display:flex;gap:3px;justify-content:center}
+.ox-btn{width:28px;height:22px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.ox-btn.O{background:#d1fae5;border-color:#10b981;color:#065f46}
+.ox-btn.X{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+.note-input{width:100%;border:none;background:transparent;font-size:10px;font-family:'DM Sans','Noto Sans KR',sans-serif;color:var(--text2);outline:none;padding:2px 0}
+
+/* Gas selector */
+.gas-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.gas-chip{padding:4px 9px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;cursor:pointer;transition:all .12s;user-select:none;background:var(--surface)}
+.gas-chip:hover{border-color:var(--purple);background:var(--purple-lt)}
+.gas-chip.selected{border-color:var(--purple);background:var(--purple-lt);color:var(--purple);font-weight:600}
+.gas-chip.disabled{opacity:.35;cursor:not-allowed;background:var(--surface2)}
+.gas-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:8px 0 5px}
+
+/* 승인 모달 */
+.pw-input{width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--radius);font-size:14px;text-align:center;letter-spacing:4px;outline:none;font-family:'DM Mono',monospace}
+.pw-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.1)}
+.section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .ports-grid{grid-template-columns:repeat(2,1fr)}
+  .cs-top{flex-direction:column}
+  .approval-box{width:100%}
+  .page{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<!-- PORT EDIT MODAL -->
+<div class="modal-overlay" id="portModal" style="display:none" onclick="if(event.target===this)closePortModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="portModalTitle">Test Port 편집</div>
+      <button class="modal-close" onclick="closePortModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editPortId">
+      <div class="form-row2">
+        <div class="form-group">
+          <label class="form-label">장비 Type</label>
+          <select class="form-select" id="editEquipType" onchange="onEquipTypeChange()">
+            <option value="">선택</option>
+            <option value="Burn">Burn</option>
+            <option value="Plasma">Plasma</option>
+            <option value="Heat">Heat</option>
+            <option value="기타">기타 (직접입력)</option>
+          </select>
+        </div>
+        <div class="form-group" id="equipCustomWrap" style="display:none">
+          <label class="form-label">장비명 직접입력</label>
+          <input type="text" class="form-input" id="editEquipCustom" placeholder="장비명 입력">
+        </div>
+        <div class="form-group" id="powerWrap">
+          <label class="form-label">사용 전력</label>
+          <select class="form-select" id="editPower"></select>
+        </div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group">
+          <label class="form-label">Mixing Tank</label>
+          <select class="form-select" id="editTank" onchange="onTankChange()">
+            <option value="">없음 / 미선택</option>
+            <option value="#1">Mixing Tank #1</option>
+            <option value="#2">Mixing Tank #2</option>
+            <option value="#3">Mixing Tank #3</option>
+            <option value="#4">Mixing Tank #4</option>
+            <option value="#5">Mixing Tank #5</option>
+            <option value="TF Room">TF Room</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">G/W ID (담당자)</label>
+          <input type="text" class="form-input" id="editGwId" placeholder="G/W ID 입력">
+        </div>
+      </div>
+      <div class="form-row2">
+        <div class="form-group">
+          <label class="form-label">사용 시작일</label>
+          <input type="date" class="form-input" id="editStart">
+        </div>
+        <div class="form-group">
+          <label class="form-label">사용 종료일</label>
+          <input type="date" class="form-input" id="editEnd">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Test Gas <span style="font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0">(Mixing Tank 선택 후 활성화)</span></label>
+        <div id="gasSelectArea"><div style="color:var(--text3);font-size:11px;padding:8px 0">Mixing Tank를 먼저 선택해주세요.</div></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비고 (사용 목적 / 소속팀명 / Project명 / 사용자)</label>
+        <textarea class="form-textarea" id="editRemark" rows="2" placeholder="사용 목적 / 소속팀명 / Project명 (사용자)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="clearPortFromModal()">초기화</button>
+      <button class="btn btn-outline btn-sm" onclick="closePortModal()">취소</button>
+      <button class="btn btn-primary btn-sm" onclick="savePort()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 승인 모달 -->
+<div class="modal-overlay" id="approvalModal" style="display:none" onclick="if(event.target===this)closeApproval()">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">🔐 결재 승인</div>
+      <button class="modal-close" onclick="closeApproval()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
+        <strong id="approvalRoleLabel"></strong> 결재를 진행합니다.<br>
+        승인자 이름과 비밀번호를 입력해주세요.
+      </div>
+      <div class="form-group">
+        <label class="form-label">승인자 이름</label>
+        <input type="text" class="form-input" id="approvalName" placeholder="이름 입력">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" class="pw-input" id="approvalPw" placeholder="••••••" autocomplete="off">
+      </div>
+      <div id="approvalError" style="display:none;color:var(--red);font-size:11px;margin-top:6px">비밀번호가 올바르지 않습니다.</div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--amber-lt);border-radius:8px;font-size:10px;color:var(--amber)">
+        💡 승인 비밀번호는 HTML 파일 상단 <code>APPROVAL_PW</code> 변수에서 설정합니다.<br>추후 SharePoint 연동 시 토큰 방식으로 교체됩니다.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeApproval()">취소</button>
+      <button class="btn btn-success btn-sm" onclick="submitApproval()">승인</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">🌀</div>
+    <div>
+      <div class="logo-name">Scrubber Lab</div>
+      <div class="logo-sub">Operational Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status loading" id="syncStatus">⟳ 연결 중...</div>
+    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+    <div class="clock" id="clock"></div>
+  </div>
+</header>
+
+<!-- TABS (Test Port 관리 탭 제거) -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    현황 대시보드
+  </button>
+  <button class="tab-btn" onclick="switchTab('checksheet',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    실험실 사용 체크시트
+  </button>
+  <button class="tab-btn" onclick="switchTab('exit',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    퇴실 체크리스트
+  </button>
+  <button class="tab-btn" onclick="switchTab('machine',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    기계실
+  </button>
+</nav>
+
+<div class="page">
+
+<!-- ══ TAB 1: 현황 대시보드 ══ -->
+<div class="tab-pane active" id="tab-dashboard">
+  <div class="stats-row" id="statsRow"></div>
+  <div class="section-label" style="margin-bottom:12px">Test Port 현황 (#1 ~ #11)</div>
+  <div class="ports-grid" id="portsGrid"></div>
+  <div class="section-label" style="margin-bottom:12px">실험실 사용 체크시트 — 이번 달 현황</div>
+  <div class="dash-check-wrap">
+    <table class="dash-check-table" id="dashCheckTable"></table>
+  </div>
+</div>
+
+<!-- ══ TAB 2: 실험실 사용 체크시트 ══ -->
+<div class="tab-pane" id="tab-checksheet">
+  <!-- 상단: 월 네비 + 메타 + 결재란 -->
+  <div class="cs-top">
+    <div class="cs-meta">
+      <div class="cs-meta-row">
+        <div class="month-nav">
+          <button class="month-nav-btn" onclick="changeCheckMonth(-1)">◀</button>
+          <span class="month-display" id="checkMonthLabel"></span>
+          <button class="month-nav-btn" onclick="changeCheckMonth(1)">▶</button>
+        </div>
+        <div style="font-size:11px;color:var(--text2)">소속: 스크러버개발팀</div>
+        <div style="font-size:10px;color:var(--text3)" id="csSetDate"></div>
+      </div>
+      <div class="cs-meta-row">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap">작성자</label>
+          <input type="text" class="form-input" id="csAuthor" placeholder="작성자명" style="width:100px" onchange="saveCheckMeta()">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap">부서</label>
+          <input type="text" class="form-input" id="csDept" placeholder="부서명" style="width:110px" onchange="saveCheckMeta()">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveCheckSheet()">💾 저장</button>
+        <div style="font-size:10px;color:var(--text3);margin-left:4px">O=양호 &nbsp;□=TEST &nbsp;X=불량</div>
+      </div>
+    </div>
+    <!-- 결재란 -->
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;text-align:right">결재</div>
+      <div class="approval-box" id="csApprovalBox">
+        <div class="approval-col">
+          <div class="approval-role">기안</div>
+          <div class="approval-sign" id="csSign0" onclick="openApproval('cs',0)">
+            <div id="csSignName0" class="approval-name" style="display:none"></div>
+            <div id="csSignDate0" class="approval-date" style="display:none"></div>
+            <div class="approval-btn" id="csSignBtn0">서명</div>
+          </div>
+        </div>
+        <div class="approval-col">
+          <div class="approval-role">검토</div>
+          <div class="approval-sign" id="csSign1" onclick="openApproval('cs',1)">
+            <div id="csSignName1" class="approval-name" style="display:none"></div>
+            <div id="csSignDate1" class="approval-date" style="display:none"></div>
+            <div class="approval-btn" id="csSignBtn1">서명</div>
+          </div>
+        </div>
+        <div class="approval-col">
+          <div class="approval-role">승인</div>
+          <div class="approval-sign" id="csSign2" onclick="openApproval('cs',2)">
+            <div id="csSignName2" class="approval-name" style="display:none"></div>
+            <div id="csSignDate2" class="approval-date" style="display:none"></div>
+            <div class="approval-btn" id="csSignBtn2">서명</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cs-table-wrap" style="margin-bottom:16px">
+    <table class="cs-table" id="csTable"></table>
+  </div>
+
+  <!-- 이상시 조치사항 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">⚠️ 이상시 조치사항</div>
+      <button class="btn btn-primary btn-sm" onclick="addIssue()">+ 추가</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="issue-table" id="issueTable">
+        <thead><tr>
+          <th style="width:80px">일자</th><th>이상 내용</th><th>조치 사항</th>
+          <th style="width:80px">완료 일자</th><th style="width:80px">작성자</th><th style="width:60px">비고</th><th style="width:36px"></th>
+        </tr></thead>
+        <tbody id="issueTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 3: 퇴실 체크리스트 ══ -->
+<div class="tab-pane" id="tab-exit">
+  <div class="card" style="padding:14px 18px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:var(--text2)">📅 기간 필터 (결재용)</span>
+      <input type="date" class="form-input" id="exitLockStart" style="width:140px">
+      <span style="color:var(--text3)">~</span>
+      <input type="date" class="form-input" id="exitLockEnd" style="width:140px">
+      <button class="btn btn-outline btn-sm" onclick="openExitLockApproval()">🔒 해당 기간 결재 완료 · 잠금</button>
+      <div id="exitLockList" style="margin-left:auto;font-size:10px;color:var(--text3)"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start">
+    <div>
+      <div class="card" style="padding:18px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:13px;font-weight:700" id="exitPanelTitle">📋 퇴실 확인 체크리스트 · 오늘 (<span id="exitTodayLabel"></span>)</div>
+          <div style="display:flex;align-items:center;gap:8px" id="exitMetaInputs">
+            <label style="font-size:10px;font-weight:700;color:var(--text2)">작성자</label>
+            <input type="text" class="form-input" id="exitAuthor" placeholder="담당자명" style="width:100px">
+            <label style="font-size:10px;font-weight:700;color:var(--text2)">부서</label>
+            <input type="text" class="form-input" id="exitDept" placeholder="부서명" style="width:100px">
+          </div>
+        </div>
+        <div id="exitViewBanner" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--amber-lt);border:1px solid #fcd34d;border-radius:8px;font-size:11px;color:#92400e"></div>
+        <div class="check-progress"><div class="check-progress-bar" id="exitProgressBar" style="width:0%"></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:10px" id="exitProgressLabel">0 / 11 완료</div>
+        <div class="checklist-items" id="exitChecklist"></div>
+        <div class="form-group" style="margin-top:8px">
+          <label class="form-label">특이사항</label>
+          <textarea class="form-textarea" id="exitRemark" rows="2" placeholder="특이사항이 있으면 작성해주세요"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px" id="exitActionBtns">
+          <button class="btn btn-success" style="flex:1" onclick="submitExit()">✅ 퇴실 체크 완료 · 제출</button>
+          <button class="btn btn-outline btn-sm" onclick="resetExit()">초기화</button>
+        </div>
+        <button class="btn btn-outline" style="width:100%;display:none;margin-top:8px" id="exitBackBtn" onclick="backToToday()">← 오늘 작성 화면으로 돌아가기</button>
+      </div>
+      <!-- 결재란 -->
+      <div class="card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700">결재</div>
+        </div>
+        <div class="approval-box" id="exitApprovalBox" style="width:100%;max-width:300px">
+          <div class="approval-col"><div class="approval-role">기안</div><div class="approval-sign" id="exitSign0" onclick="openApproval('exit',0)"><div id="exitSignName0" class="approval-name" style="display:none"></div><div id="exitSignDate0" class="approval-date" style="display:none"></div><div class="approval-btn" id="exitSignBtn0">서명</div></div></div>
+          <div class="approval-col"><div class="approval-role">검토</div><div class="approval-sign" id="exitSign1" onclick="openApproval('exit',1)"><div id="exitSignName1" class="approval-name" style="display:none"></div><div id="exitSignDate1" class="approval-date" style="display:none"></div><div class="approval-btn" id="exitSignBtn1">서명</div></div></div>
+          <div class="approval-col"><div class="approval-role">승인</div><div class="approval-sign" id="exitSign2" onclick="openApproval('exit',2)"><div id="exitSignName2" class="approval-name" style="display:none"></div><div id="exitSignDate2" class="approval-date" style="display:none"></div><div class="approval-btn" id="exitSignBtn2">서명</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">제출 이력 <span style="font-size:9px;color:var(--text3);font-weight:400">(클릭하여 상세 확인)</span></div></div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:5px;max-height:500px;overflow-y:auto" id="exitHistory">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">제출 이력 없음</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: 기계실 ══ -->
+<div class="tab-pane" id="tab-machine">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="month-nav">
+      <button class="month-nav-btn" onclick="changeInspMonth(-1)">◀</button>
+      <span class="month-display" id="inspMonthLabel"></span>
+      <button class="month-nav-btn" onclick="changeInspMonth(1)">▶</button>
+    </div>
+    <label style="font-size:10px;font-weight:700;color:var(--text2)">작성자</label>
+    <input type="text" class="form-input" id="inspAuthor" placeholder="담당자명" style="width:100px" onchange="saveInspMeta()">
+    <label style="font-size:10px;font-weight:700;color:var(--text2)">부서</label>
+    <input type="text" class="form-input" id="inspDept" placeholder="부서명" style="width:100px" onchange="saveInspMeta()">
+    <button class="btn btn-primary btn-sm" onclick="saveInsp()">💾 저장</button>
+  </div>
+  <div style="display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start">
+    <div>
+      <div class="section-label">장비 목록</div>
+      <div class="equip-list" id="equipList"></div>
+      <div class="card" style="padding:12px;margin-top:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px">+ 점검항목 추가</div>
+        <input type="text" class="form-input" id="customItemInput" placeholder="항목 입력 후 Enter" style="font-size:11px;margin-bottom:6px" onkeydown="if(event.key==='Enter')addCustomItem()">
+        <button class="btn btn-outline btn-sm" style="width:100%" onclick="addCustomItem()">추가</button>
+        <div style="font-size:9px;color:var(--text3);margin-top:6px">※ 선택 중인 장비, 이번 달에만 적용됩니다.</div>
+      </div>
+    </div>
+    <div>
+      <div class="insp-wrap">
+        <table class="insp-table" id="inspGrid"></table>
+      </div>
+      <!-- 기계실 결재란 -->
+      <div class="card" style="padding:14px;margin-top:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">결재</div>
+        <div class="approval-box" id="machApprovalBox" style="width:100%;max-width:300px">
+          <div class="approval-col"><div class="approval-role">기안</div><div class="approval-sign" id="machSign0" onclick="openApproval('mach',0)"><div id="machSignName0" class="approval-name" style="display:none"></div><div id="machSignDate0" class="approval-date" style="display:none"></div><div class="approval-btn" id="machSignBtn0">서명</div></div></div>
+          <div class="approval-col"><div class="approval-role">검토</div><div class="approval-sign" id="machSign1" onclick="openApproval('mach',1)"><div id="machSignName1" class="approval-name" style="display:none"></div><div id="machSignDate1" class="approval-date" style="display:none"></div><div class="approval-btn" id="machSignBtn1">서명</div></div></div>
+          <div class="approval-col"><div class="approval-role">승인</div><div class="approval-sign" id="machSign2" onclick="openApproval('mach',2)"><div id="machSignName2" class="approval-name" style="display:none"></div><div id="machSignDate2" class="approval-date" style="display:none"></div><div class="approval-btn" id="machSignBtn2">서명</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+<script>
+/* ══ CONFIG ══ */
+const APPROVAL_PW = '1234'; // ← 여기서 승인 비밀번호 변경 (추후 SharePoint 토큰으로 교체)
+
+/* ══════════════════════════════════════
+   ★ 구글 시트 연동 설정
+   Apps Script 배포 후 아래 URL을 실제 배포 URL로 교체하세요.
+═══════════════════════════════════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbz15EjoLIuWUB_xfH1TvoBwpwvWR8mPskYCmgCigJZEj7FfKCAvYJ4VmgfBxU0tnl7c/exec'; // 예: 'https://script.google.com/macros/s/XXXXXX/exec'
+
+function setSyncStatus(state,msg){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  el.className='sync-status '+state;
+  el.textContent=msg;
+}
+async function apiGet(action){
+  if(!API_URL) return null;
+  try{
+    setSyncStatus('loading','⟳ 동기화 중...');
+    const res=await fetch(`${API_URL}?action=${action}`);
+    const json=await res.json();
+    setSyncStatus('ok','✓ 동기화됨');
+    return json;
+  }catch(e){ setSyncStatus('err','✗ 연결 오류'); console.error('apiGet error:',e); return null; }
+}
+async function apiPost(action,data){
+  if(!API_URL) return null;
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({action,data:JSON.stringify(data)})});
+    return await res.json();
+  }catch(e){ console.error('apiPost error:',action,e); return null; }
+}
+async function loadAllFromSheet(){
+  if(!API_URL) return;
+  const res=await apiGet('getAll');
+  if(!res||res.error) return;
+  ports=res.ports||{};
+  checkMeta=res.checkMeta||{};
+  checkData=res.checkData||{};
+  exitHistory=res.exitHistory||[];
+  exitLocks=res.exitLocks||[];
+  inspData=res.inspData||{};
+  inspMeta=res.inspMeta||{};
+  inspCustom=res.inspCustom||{};
+  issueData=res.issues||[];
+  approvalData=res.approvals||{cs:{},exit:{},mach:{}};
+  saveLS(LS.ports,ports);saveLS(LS.checkMeta,checkMeta);saveLS(LS.check,checkData);
+  saveLS(LS.exit,exitHistory);saveLS(LS.exitLocks,exitLocks);saveLS(LS.insp,inspData);
+  saveLS(LS.inspMeta,inspMeta);saveLS(LS.inspCustom,inspCustom);saveLS(LS.issues,issueData);
+  saveLS(LS.approval,approvalData);
+  // 현재 활성 탭 다시 그리기
+  const activeTab=document.querySelector('.tab-pane.active');
+  if(activeTab){
+    const id=activeTab.id.replace('tab-','');
+    if(id==='dashboard')renderDashboard();
+    if(id==='checksheet')renderCheckSheet();
+    if(id==='exit')renderExitTab();
+    if(id==='machine')renderMachineTab();
+  }
+}
+
+
+/* ══ CONSTANTS ══ */
+const PORT_IDS=['#1','#2','#3','#4','#5','#6','#7','#8','#9','#10','#11'];
+const PORT_POWER={
+  '#1':'both','#2':'50A','#3':'both','#4':'both','#5':'50A',
+  '#6':'both','#7':'50A','#8':'both','#9':'50A','#10':'150A','#11':'50A'
+};
+const MIXING_GAS=['F₂','DCS','NH₃-1','SF₆','CF₄-1','CF₄-2','C₂F₆','NF₃-1','NF₃-2','N₂O','H₂','HCl','SiH₄-1','SiH₄-2','NH₃'];
+const TF_GAS=['N₂-1','N₂-2','N₂-3','CDA','CF₄','NF₃','O₂','CH₄-3','SiH₄','CH₄-3 → TF Room'];
+const EXCLUSIVE=[['CF₄-1','CF₄-2'],['NF₃-1','NF₃-2'],['SiH₄-1','SiH₄-2']];
+const EXIT_ITEMS=[
+  '실험실 사용 체크시트 확인 후 마지막 퇴실자인가?',
+  'House Chiller 전원 OFF 하였는가?',
+  'Dust Collector 전원 OFF 하였는가?',
+  'Acid Blower 전원 OFF 하였는가?',
+  'Wet Scrubber 전원 OFF 하였는가?',
+  'Room Blower 전원 OFF 하였는가?',
+  'Process Gas MFC 작동 OFF 되었는가?',
+  'Test Port 1~11 전원 OFF 되었는가?',
+  'Test Port 1~11 Utility Valve OFF 되었는가?',
+  '동계 시 실외온도 -5℃이하일 경우 냉난방기 가동 되었는가?',
+  '실험실 전등 OFF 하였는가?',
+];
+const EQUIP_LIST=[
+  'Air Dryer (흡착식)','Gas Absorption Tower System','Air Dryer (냉동식)',
+  'Power Exhaust 배기 Line','Air Tank','Wet Tower 배기 Line','Air Compressor',
+  'Power Exhaust 배기 Line (2)','Blower','Acid 배기 Line','UPS','Room 배기 Line','House Chiller (SCR Lab실)',
+];
+const EQUIP_CHECKS={
+  'Air Dryer (흡착식)':['누공부는 없는가?','계기판에 이상은 없는가?','에어 압력은 정상 작동 되는가?'],
+  'Gas Absorption Tower System':['가동시 모터 및 소음 및 진동은 없는가?','24시간 정상 가동 중인가?'],
+  'Air Dryer (냉동식)':['냉매 압력은 정상인가?','온도는 정상인가?','누유 및 누공부는 없는가?'],
+  'Power Exhaust 배기 Line':['Dust Collector의 압력은 정상인가? (정상 압력 : 100mmAq 이상)','배기 Line의 배관 및 연결부에 누출은 없는가?','Dust Collector의 필터 교체 주기는 적정한가? (차압 발생하는 경우 혹은 1년에 1회)','Power Filter 청소는 했는가? (주 1회)','Power Filter 교체 주기는 적정한가? (년 2회)'],
+  'Air Tank':['외부 누공부는 없는가?','압력계는 정상을 유지하고 있는가?'],
+  'Wet Tower 배기 Line':['Wet Tower 부분의 압력은 정상인가? (정상 압력 : 20mmAq 이상)','배기 Line의 배관 및 연결부에 누출은 없는가?','Wet Tower의 Pump는 정상작동 하는가?','Wet Tower의 배관 및 연결부 누수는 없는가?'],
+  'Air Compressor':['로딩 압력이 스펙을 초과하지 않았는가?','오일 보충은 충분한가?','온도는 스펙 유지가 되고 있는가?','가동 시 모터 소음 및 진동은 없는가?','외부 누유 및 누공부는 없는가?'],
+  'Power Exhaust 배기 Line (2)':['Dust Collector의 압력은 정상인가? (정상 압력 : 100mmAq 이상)','배기 Line의 배관 및 연결부에 누출은 없는가?','Dust Collector의 필터 교체 주기는 적정한가? (차압 발생하는 경우 혹은 1년에 1회)','Power Filter 청소는 했는가? (주 1회)','Power Filter 교체 주기는 적정한가? (년 2회)'],
+  'Blower':['가동 시 모터 소음 및 진동은 없는가?'],
+  'Acid 배기 Line':['Blower 부분의 압력은 정상인가? (정상 압력 : 200mmAq 이상)','흡착 Tower 부분의 압력은 정상인가? (정상 압력 : 60mmAq 이상)','흡착 Tower의 흡착제 교체 주기는 적정한가? (대기환경 측정 결과에 따라서 1년 1~2회 교체)'],
+  'UPS':['축전지 보관 내부 쥐는 없는가?','열 발생은 없는가?'],
+  'Room 배기 Line':['Blower 부분의 압력은 정상인가? (정상 압력 : 20mmAq 이상)','배기 Line의 배관 및 연결부에 누출은 없는가?'],
+  'House Chiller (SCR Lab실)':['가동시 모터 및 소음 및 진동은 없는가?','PCW 압력은 정상인가?','BCW 압력은 정상인가?','누수 되는 곳은 없는가?','물탱크 수위는 괜찮은가?'],
+};
+
+/* ══ STATE ══ */
+const LS={ports:'scr_ports_v2',check:'scr_check_v2',issues:'scr_issues_v2',exit:'scr_exit_v2',insp:'scr_insp_v2',approval:'scr_approval_v2',checkMeta:'scr_checkMeta_v2',exitLocks:'scr_exitlocks_v1',inspMeta:'scr_inspMeta_v1',inspCustom:'scr_inspCustom_v1'};
+function loadLS(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function saveLS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+let ports=loadLS(LS.ports)||{};
+let checkData=loadLS(LS.check)||{};
+let issueData=loadLS(LS.issues)||[];
+let exitHistory=loadLS(LS.exit)||[];
+let exitLocks=loadLS(LS.exitLocks)||[]; // [{start,end,name,date}]
+let inspData=loadLS(LS.insp)||{};
+let inspMeta=loadLS(LS.inspMeta)||{};
+let inspCustom=loadLS(LS.inspCustom)||{}; // {monthKey: {equipName: ["custom item", ...]}}
+let approvalData=loadLS(LS.approval)||{cs:{},exit:{},mach:{}};
+let checkMeta=loadLS(LS.checkMeta)||{};
+let exitChecked=new Array(EXIT_ITEMS.length).fill(false);
+let exitViewIndex=null; // null=오늘 작성 모드, 숫자=이력 조회 모드(읽기전용)
+let selectedEquip=EQUIP_LIST[0];
+let checkMonth=new Date();checkMonth.setDate(1);
+let inspMonth=new Date();inspMonth.setDate(1);
+let pendingApproval={sheet:null,role:null};
+
+/* ══ UTILS ══ */
+const today=()=>new Date().toISOString().slice(0,10);
+const fmtDate=d=>d?d.slice(5).replace('-','/'):''
+const daysInMonth=(y,m)=>new Date(y,m+1,0).getDate();
+function getWeeksOfMonth(y,m){
+  const first=new Date(y,m,1);const last=new Date(y,m+1,0);
+  const weeks=[];let cur=new Date(first);
+  while(cur<=last){
+    const s=new Date(cur);const e=new Date(cur);e.setDate(e.getDate()+6);
+    if(e>last)e.setTime(last.getTime());
+    weeks.push({start:new Date(s),end:new Date(e),label:`${s.getDate()}~${e.getDate()}일`});
+    cur.setDate(cur.getDate()+7);
+  }
+  return weeks;
+}
+function showToast(msg,icon='✅'){
+  document.getElementById('toastIcon').textContent=icon;
+  document.getElementById('toastMsg').textContent=msg;
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);
+}
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+setInterval(updateClock,1000);updateClock();
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
+  if(name==='dashboard'){renderDashboard();}
+  if(name==='checksheet'){renderCheckSheet();}
+  if(name==='exit'){renderExitTab();}
+  if(name==='machine'){renderMachineTab();}
+}
+
+function getPortStatus(p){
+  if(!p||!p.start)return 'empty';
+  const t=today(),end=p.end||'';
+  if(!end)return 'active';
+  if(end<t)return 'empty';
+  if(Math.floor((new Date(end)-new Date(t))/864e5)<=5)return 'renew';
+  return 'active';
+}
+
+/* ══ TAB 1: DASHBOARD ══ */
+function renderDashboard(){
+  const active=PORT_IDS.filter(id=>getPortStatus(ports[id])!=='empty').length;
+  const empty=PORT_IDS.length-active;
+  const now=new Date();
+  const wKey=`${now.getFullYear()}-${now.getMonth()}-W${Math.ceil(now.getDate()/7)}`;
+  const inspDone=!!(inspData[wKey]&&inspData[wKey].done);
+  const exitDone=exitHistory.some(r=>r.date===today());
+
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-val" style="color:var(--teal)">${PORT_IDS.length-empty}<span>/${PORT_IDS.length}</span></div><div class="stat-lbl">사용 중인 Test Port</div></div>
+    <div class="stat-card"><div class="stat-icon">⚪</div><div class="stat-val" style="color:var(--green)">${empty}<span>/${PORT_IDS.length}</span></div><div class="stat-lbl">비어있는 Test Port</div></div>
+    <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-val" style="font-size:18px;font-weight:800;color:${inspDone?'var(--green)':'var(--amber)'}">${inspDone?'완료':'미완료'}</div><div class="stat-lbl">이번주 기계실 점검</div></div>
+    <div class="stat-card"><div class="stat-icon">🚪</div><div class="stat-val" style="font-size:18px;font-weight:800;color:${exitDone?'var(--green)':'var(--red)'}">${exitDone?'완료':'미완료'}</div><div class="stat-lbl">오늘 퇴실 체크</div></div>`;
+
+  document.getElementById('portsGrid').innerHTML=PORT_IDS.map(id=>{
+    const p=ports[id]||{};const s=getPortStatus(p);
+    const isEmpty=s==='empty';const isRenew=s==='renew';
+    const equip=p.equipType==='기타'?p.equipCustom:p.equipType;
+    return`<div class="port-card ${s}" onclick="${isEmpty?`openPortModalFor('${id}')`:`goToCheckSheet('${id}')`}">
+      <div class="port-card-header">
+        <div class="port-id">Test Port ${id}</div>
+        <span class="badge ${isEmpty?'badge-green':isRenew?'badge-red':'badge-teal'}">${isEmpty?'비어있음':isRenew?'갱신 필요':'사용 중'}</span>
+      </div>
+      ${isEmpty?`<div class="port-body"><div style="color:var(--text3);font-size:11px">클릭하여 등록</div></div>`:`
+      <div class="port-body">
+        ${equip?`<div class="port-row"><span class="port-key">장비</span><span class="port-val">${equip}</span></div>`:''}
+        ${p.power?`<div class="port-row"><span class="port-key">⚡ 전력</span><span class="port-val" style="color:var(--amber)">${p.power}</span></div>`:''}
+        ${p.tank?`<div class="port-row"><span class="port-key">🧪 Tank</span><span class="port-val" style="color:var(--teal)">${p.tank==='TF Room'?'TF Room':'Tank '+p.tank}</span></div>`:''}
+        ${p.gases&&p.gases.length?`<div class="port-row"><span class="port-key">💨 Gas</span><span class="port-val" style="font-size:10px">${p.gases.join(', ')}</span></div>`:''}
+        ${p.gwId?`<div class="port-row"><span class="port-key">🆔</span><span class="port-val" style="color:var(--blue)">${p.gwId}</span></div>`:''}
+        ${p.start||p.end?`<div class="port-dates">📅 ${fmtDate(p.start)} ~ ${fmtDate(p.end)}</div>`:''}
+        ${p.remark?`<div class="port-remark">${p.remark}</div>`:''}
+      </div>
+      ${isRenew?`<div class="renew-banner">⚠ 갱신 필요 (종료일 5일 이내)</div>`:''}`}
+    </div>`;
+  }).join('');
+
+  renderDashCheckTable();
+}
+
+/* 현황 대시보드 하단 체크시트 미리보기 */
+function renderDashCheckTable(){
+  const now=new Date();const y=now.getFullYear();const m=now.getMonth();
+  const days=daysInMonth(y,m);const DN=['일','월','화','수','목','금','토'];
+  const key=`${y}-${String(m+1).padStart(2,'0')}`;
+  const data=checkData[key]||{};const todayStr=today();
+
+  let html='<thead><tr><th class="col-label">No. &nbsp; Test Port / 담당자</th><th style="width:50px;font-size:9px">사용</th>';
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d);const dn=dt.getDay();
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===todayStr;
+    html+=`<th style="min-width:28px;font-size:9px;${isToday?'background:rgba(15,118,110,.15);color:var(--teal);font-weight:700;border-bottom:2px solid var(--teal)':''}">${d}<br><span style="font-size:8px;color:${dn===0?'var(--red)':dn===6?'var(--blue)':'var(--text3)'}">${DN[dn]}</span></th>`;
+  }
+  html+='</tr></thead><tbody>';
+
+  PORT_IDS.forEach((id,i)=>{
+    const p=ports[id]||{};const gwId=p.gwId||'';
+    // 사용 행
+    html+=`<tr>
+      <td class="col-label" rowspan="2" style="vertical-align:middle;border-bottom:2px solid var(--border2)">
+        <strong>${i+1}</strong> &nbsp; Test Port ${id}${gwId?` : <span style="color:var(--blue);font-size:10px">${gwId}</span>`:''}
+      </td>
+      <td class="col-sub" style="font-size:10px;text-align:center;color:var(--text3);background:var(--surface2)">사용</td>`;
+    for(let d=1;d<=days;d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const val=data[`${id}-use-${ds}`]||'';
+      const isToday=ds===todayStr;
+      const cls=val==='O'?'use-O':val==='T'?'use-T':val==='X'?'use-X':'';
+      html+=`<td style="text-align:center;font-size:10px;font-weight:${val?700:400};${isToday?'background:rgba(15,118,110,.07)':''}" class="${cls}">${val==='T'?'□':val||''}</td>`;
+    }
+    html+='</tr><tr>';
+    // 완료시간 행
+    html+=`<td class="col-sub" style="font-size:10px;text-align:center;color:var(--text3);background:var(--surface2);border-bottom:2px solid var(--border2)">완료시간</td>`;
+    for(let d=1;d<=days;d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const val=data[`${id}-time-${ds}`]||'';
+      const isToday=ds===todayStr;
+      html+=`<td style="text-align:center;font-size:9px;font-family:'DM Mono',monospace;color:var(--teal);border-bottom:2px solid var(--border2);${isToday?'background:rgba(15,118,110,.07)':''}">${val}</td>`;
+    }
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('dashCheckTable').innerHTML=html;
+}
+
+/* ══ PORT MODAL ══ */
+function openPortModalFor(id){
+  document.getElementById('portModalTitle').textContent=`Test Port ${id} 등록`;
+  document.getElementById('editPortId').value=id;
+  const p=ports[id]||{};
+  document.getElementById('editEquipType').value=p.equipType||'';
+  document.getElementById('editEquipCustom').value=p.equipCustom||'';
+  document.getElementById('equipCustomWrap').style.display=p.equipType==='기타'?'block':'none';
+  document.getElementById('editStart').value=p.start||'';
+  document.getElementById('editEnd').value=p.end||'';
+  document.getElementById('editRemark').value=p.remark||'';
+  document.getElementById('editGwId').value=p.gwId||'';
+  buildPowerSelect(id,p.power||'');
+  document.getElementById('editTank').value=p.tank||'';
+  buildGasSelect(p.tank||'',p.gases||[],id);
+  document.getElementById('portModal').style.display='flex';
+}
+function closePortModal(){document.getElementById('portModal').style.display='none';}
+function onEquipTypeChange(){
+  document.getElementById('equipCustomWrap').style.display=document.getElementById('editEquipType').value==='기타'?'block':'none';
+}
+function buildPowerSelect(portId,cur){
+  const rule=PORT_POWER[portId];const sel=document.getElementById('editPower');
+  sel.innerHTML='<option value="">선택</option>';
+  if(rule==='both'||rule==='50A')sel.innerHTML+=`<option value="50A">50A</option>`;
+  if(rule==='both'||rule==='150A')sel.innerHTML+=`<option value="150A">150A</option>`;
+  sel.value=cur;
+  if(rule==='50A'){sel.value='50A';sel.disabled=true;}
+  else if(rule==='150A'){sel.value='150A';sel.disabled=true;}
+  else sel.disabled=false;
+}
+function onTankChange(){buildGasSelect(document.getElementById('editTank').value,[],document.getElementById('editPortId').value);}
+function buildGasSelect(tank,selected=[],portId=''){
+  const area=document.getElementById('gasSelectArea');
+  if(!tank){area.innerHTML='<div style="color:var(--text3);font-size:11px;padding:8px 0">Mixing Tank를 먼저 선택해주세요.</div>';return;}
+  const isTF=tank==='TF Room';
+  const list=isTF?TF_GAS:MIXING_GAS;
+  const usedGases=new Set();
+  Object.entries(ports).forEach(([pid,p])=>{if(pid!==portId&&p.gases)p.gases.forEach(g=>usedGases.add(g));});
+  let html=`<div class="gas-grid">`;
+  list.forEach(g=>{
+    const isSel=selected.includes(g);
+    let dis=false;
+    if(!isTF){for(const pair of EXCLUSIVE){if(pair.includes(g)){const other=pair.find(x=>x!==g);if(usedGases.has(other)&&!isSel)dis=true;}}}
+    html+=`<div class="gas-chip ${isSel?'selected':''} ${dis?'disabled':''}" data-gas="${g}" onclick="toggleGas(this,'${g}',${dis})">${g}</div>`;
+  });
+  html+='</div>';area.innerHTML=html;
+}
+function toggleGas(el,gas,disabled){
+  if(disabled)return;el.classList.toggle('selected');
+  const sel=getSelectedGases();
+  for(const pair of EXCLUSIVE){if(pair.includes(gas)){const other=pair.find(x=>x!==gas);
+    document.querySelectorAll(`.gas-chip[data-gas="${other}"]`).forEach(e=>{
+      if(!sel.includes(gas))e.classList.remove('disabled');
+      else if(!e.classList.contains('selected'))e.classList.add('disabled');
+    });
+  }}
+}
+function getSelectedGases(){return[...document.querySelectorAll('.gas-chip.selected')].map(e=>e.dataset.gas);}
+function savePort(){
+  const id=document.getElementById('editPortId').value;
+  const tank=document.getElementById('editTank').value;
+  if(tank){for(const[pid,p]of Object.entries(ports)){if(pid!==id&&p.tank===tank&&p.start&&p.end){
+    const s=document.getElementById('editStart').value;const e=document.getElementById('editEnd').value;
+    if(s&&e&&s<=p.end&&e>=p.start){showToast(`Mixing Tank ${tank}은 ${pid}에서 같은 기간 사용 중입니다.`,'⚠️');return;}
+  }}}
+  ports[id]={
+    equipType:document.getElementById('editEquipType').value,
+    equipCustom:document.getElementById('editEquipCustom').value.trim(),
+    power:document.getElementById('editPower').value,
+    tank,gases:getSelectedGases(),
+    start:document.getElementById('editStart').value,
+    end:document.getElementById('editEnd').value,
+    gwId:document.getElementById('editGwId').value.trim(),
+    remark:document.getElementById('editRemark').value.trim(),
+  };
+  saveLS(LS.ports,ports);closePortModal();renderDashboard();showToast(`Test Port ${id} 저장 완료`,'✅');
+  apiPost('savePort',{portId:id,...ports[id]});
+}
+function clearPortFromModal(){
+  if(!confirm('초기화하시겠습니까?'))return;
+  const id=document.getElementById('editPortId').value;
+  delete ports[id];saveLS(LS.ports,ports);closePortModal();renderDashboard();showToast('초기화되었습니다','🗑️');
+  apiPost('deletePort',{portId:id});
+}
+function goToCheckSheet(id){
+  // 체크시트 탭으로 이동 — 해당 포트의 오늘 날짜 체크시트로
+  document.querySelectorAll('.tab-btn')[1].click();
+  setTimeout(()=>{
+    const todayStr=today();const y=checkMonth.getFullYear();const m=checkMonth.getMonth();
+    const cm=`${y}-${String(m+1).padStart(2,'0')}`;const t=todayStr.slice(0,7);
+    if(cm!==t){checkMonth=new Date(todayStr.slice(0,7)+'-01');renderCheckSheet();}
+    // 해당 포트 행 스크롤
+    setTimeout(()=>{
+      const row=document.querySelector(`[data-port="${id}"]`);
+      if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
+    },200);
+  },150);
+}
+
+/* ══ TAB 2: CHECK SHEET ══ */
+function saveCheckMeta(){
+  const key=`${checkMonth.getFullYear()}-${String(checkMonth.getMonth()+1).padStart(2,'0')}`;
+  if(!checkMeta[key])checkMeta[key]={};
+  checkMeta[key].author=document.getElementById('csAuthor').value;
+  checkMeta[key].dept=document.getElementById('csDept').value;
+  saveLS(LS.checkMeta,checkMeta);
+  apiPost('saveCheckMeta',{month:key,author:checkMeta[key].author,dept:checkMeta[key].dept});
+}
+
+function renderCheckSheet(){
+  const y=checkMonth.getFullYear();const m=checkMonth.getMonth();
+  const key=`${y}-${String(m+1).padStart(2,'0')}`;
+  document.getElementById('checkMonthLabel').textContent=`${y}년 ${m+1}월`;
+  document.getElementById('csSetDate').textContent=`제정일자 : 2023.02.09`;
+  // meta
+  const meta=checkMeta[key]||{};
+  document.getElementById('csAuthor').value=meta.author||'';
+  document.getElementById('csDept').value=meta.dept||'';
+  // approval
+  renderApprovalBox('cs');
+
+  const days=daysInMonth(y,m);
+  const DN=['일','월','화','수','목','금','토'];
+  const data=checkData[key]||{};
+  const todayStr=today();
+
+  let html='<thead><tr>';
+  html+=`<th class="cs-th-label">No. &nbsp; Test Port / 담당자</th>`;
+  html+=`<th class="cs-th" style="min-width:50px;font-size:9px;color:var(--text3)">구분</th>`;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d);const dn=dt.getDay();
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===todayStr;
+    const sundayStyle=dn===0?'color:var(--red)':'';
+    const saturdayStyle=dn===6?'color:var(--blue)':'';
+    const todayStyle=isToday?'background:rgba(15,118,110,.18)!important;color:var(--teal);font-weight:800;border-bottom:3px solid var(--teal)':'';
+    html+=`<th class="cs-th cs-day-col" style="${todayStyle};${sundayStyle}${saturdayStyle}">${d}<br><span style="font-size:8px">${DN[dn]}</span></th>`;
+  }
+  html+='</tr></thead><tbody>';
+
+  PORT_IDS.forEach((id,i)=>{
+    const p=ports[id]||{};const gwId=p.gwId||'';
+    // 사용 행
+    html+=`<tr data-port="${id}">
+      <td class="cs-td-label" rowspan="2" style="vertical-align:middle;border-bottom:2px solid var(--border2)">
+        <div><strong>${i+1}</strong> &nbsp; Test Port ${id}</div>
+        ${gwId?`<div style="font-size:10px;color:var(--blue)">${gwId}</div>`:''}
+      </td>
+      <td class="cs-td-sub" style="text-align:center;font-size:10px;background:var(--surface2)">사용</td>`;
+    for(let d=1;d<=days;d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const ck=`${id}-use-${ds}`;const val=data[ck]||'';
+      const isToday=ds===todayStr;const dn=new Date(y,m,d).getDay();
+      const bgExtra=isToday?'background:rgba(15,118,110,.07);':dn===0?'background:rgba(220,38,38,.03);':dn===6?'background:rgba(37,99,235,.03);':'';
+      html+=`<td class="cs-day-col" style="${bgExtra}padding:2px">
+        <select class="cs-select val-${val||''}" onchange="setCheckVal('${key}','${ck}',this.value,this)" style="font-size:10px">
+          <option value=""></option>
+          <option value="O" ${val==='O'?'selected':''}>O</option>
+          <option value="T" ${val==='T'?'selected':''}>□</option>
+          <option value="X" ${val==='X'?'selected':''}>X</option>
+        </select>
+      </td>`;
+    }
+    html+='</tr>';
+    // 완료시간 행
+    html+=`<tr><td class="cs-td-sub" style="text-align:center;font-size:10px;background:var(--surface2);border-bottom:2px solid var(--border2)">완료시간</td>`;
+    for(let d=1;d<=days;d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const ck=`${id}-time-${ds}`;const val=data[ck]||'';
+      const isToday=ds===todayStr;const dn=new Date(y,m,d).getDay();
+      const bgExtra=isToday?'background:rgba(15,118,110,.07);':dn===0?'background:rgba(220,38,38,.03);':dn===6?'background:rgba(37,99,235,.03);':'';
+      html+=`<td class="cs-day-col" style="${bgExtra}padding:2px;border-bottom:2px solid var(--border2)">
+        <input class="cs-time-input" type="text" value="${val}" placeholder="--:--" maxlength="5"
+          onchange="setCheckVal('${key}','${ck}',this.value,null)" style="font-size:9px">
+      </td>`;
+    }
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('csTable').innerHTML=html;
+  renderIssues();
+}
+
+function setCheckVal(key,ck,val,sel){
+  if(!checkData[key])checkData[key]={};
+  checkData[key][ck]=val;
+  if(sel){sel.className=`cs-select val-${val}`;}
+  saveLS(LS.check,checkData);
+  const m=ck.match(/^(.+)-(use|time)-(\d{4}-\d{2}-\d{2})$/);
+  if(m) apiPost('setCheckCell',{month:key,portId:m[1],field:m[2],date:m[3],value:val});
+}
+function changeCheckMonth(d){checkMonth.setMonth(checkMonth.getMonth()+d);renderCheckSheet();}
+function saveCheckSheet(){saveCheckMeta();saveLS(LS.check,checkData);showToast('체크시트 저장 완료','✅');}
+
+/* 이상시 조치사항 */
+function renderIssues(){
+  const rows=issueData.map((r,i)=>`<tr>
+    <td><input class="issue-input" type="date" value="${r.date||''}" onchange="updIssue(${i},'date',this.value)" style="width:90px;font-size:10px;font-family:'DM Mono',monospace"></td>
+    <td><input class="issue-input" type="text" value="${r.content||''}" onchange="updIssue(${i},'content',this.value)" placeholder="이상 내용"></td>
+    <td><input class="issue-input" type="text" value="${r.action||''}" onchange="updIssue(${i},'action',this.value)" placeholder="조치 사항"></td>
+    <td><input class="issue-input" type="date" value="${r.doneDate||''}" onchange="updIssue(${i},'doneDate',this.value)" style="width:90px;font-size:10px;font-family:'DM Mono',monospace"></td>
+    <td><input class="issue-input" type="text" value="${r.writer||''}" onchange="updIssue(${i},'writer',this.value)" style="width:60px" placeholder="작성자"></td>
+    <td><input class="issue-input" type="text" value="${r.note||''}" onchange="updIssue(${i},'note',this.value)" style="width:50px"></td>
+    <td><button onclick="rmIssue(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:12px;padding:2px 5px">✕</button></td>
+  </tr>`).join('');
+  document.getElementById('issueTbody').innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:12px;color:var(--text3);font-size:11px">이상 내용 없음</td></tr>`;
+}
+function addIssue(){
+  const id=Date.now();
+  const item={id,date:today(),content:'',action:'',doneDate:'',writer:'',note:''};
+  issueData.push(item);saveLS(LS.issues,issueData);renderIssues();
+  apiPost('addIssue',item);
+}
+function updIssue(i,k,v){
+  issueData[i][k]=v;saveLS(LS.issues,issueData);
+  apiPost('updateIssue',{id:issueData[i].id,field:k,value:v});
+}
+function rmIssue(i){
+  const id=issueData[i].id;
+  issueData.splice(i,1);saveLS(LS.issues,issueData);renderIssues();
+  apiPost('deleteIssue',{id});
+}
+
+/* ══ TAB 3: EXIT CHECKLIST ══ */
+function isDateLocked(dateStr){
+  return exitLocks.some(l=>dateStr>=l.start&&dateStr<=l.end);
+}
+function renderExitTab(){
+  renderExitLockList();
+
+  if(exitViewIndex!==null){
+    // ── 읽기 전용: 이력 조회 모드 ──
+    const r=exitHistory[exitViewIndex];
+    const locked=isDateLocked(r.date);
+    document.getElementById('exitPanelTitle').innerHTML=`📋 퇴실 확인 체크리스트 · <span style="color:var(--teal)">${r.date} ${r.time}</span> 조회`;
+    document.getElementById('exitMetaInputs').style.display='none';
+    document.getElementById('exitViewBanner').style.display='block';
+    document.getElementById('exitViewBanner').innerHTML=locked?
+      `🔒 이 날짜는 결재 승인 완료되어 잠금 처리되었습니다. (읽기 전용)`:
+      `📖 이력 조회 중입니다. 수정하려면 항목을 클릭하세요. (미승인 상태만 수정 가능)`;
+    const cl=document.getElementById('exitChecklist');
+    cl.innerHTML=EXIT_ITEMS.map((item,i)=>{
+      const checked=r.checks?r.checks[i]:false;
+      return`<div class="checklist-item ${checked?'checked':''}" style="${locked?'cursor:not-allowed;opacity:.85':''}" onclick="${locked?'':`toggleViewCheck(${i})`}">
+        <div class="ci-num">${checked?'✓':i+1}</div><div class="ci-text">${item}</div>
+      </div>`;
+    }).join('');
+    const done=(r.checks||[]).filter(Boolean).length;
+    document.getElementById('exitProgressBar').style.width=`${(done/EXIT_ITEMS.length)*100}%`;
+    document.getElementById('exitProgressLabel').textContent=`${done} / ${EXIT_ITEMS.length} 확인됨`;
+    document.getElementById('exitRemark').value=r.remark||'';
+    document.getElementById('exitRemark').disabled=locked;
+    document.getElementById('exitActionBtns').style.display=locked?'none':'flex';
+    document.getElementById('exitBackBtn').style.display='block';
+  } else {
+    // ── 오늘 작성 모드 ──
+    const locked=isDateLocked(today());
+    document.getElementById('exitPanelTitle').innerHTML=`📋 퇴실 확인 체크리스트 · 오늘 (<span id="exitTodayLabel">${today()}</span>)`;
+    document.getElementById('exitMetaInputs').style.display='flex';
+    document.getElementById('exitViewBanner').style.display=locked?'block':'none';
+    if(locked)document.getElementById('exitViewBanner').textContent='🔒 오늘 날짜가 이미 결재 완료되어 잠금 처리되었습니다.';
+    const cl=document.getElementById('exitChecklist');
+    cl.innerHTML=EXIT_ITEMS.map((item,i)=>`
+      <div class="checklist-item ${exitChecked[i]?'checked':''}" onclick="${locked?'':`toggleExit(${i})`}">
+        <div class="ci-num">${exitChecked[i]?'✓':i+1}</div>
+        <div class="ci-text">${item}</div>
+      </div>`).join('');
+    const done=exitChecked.filter(Boolean).length;
+    document.getElementById('exitProgressBar').style.width=`${(done/EXIT_ITEMS.length)*100}%`;
+    document.getElementById('exitProgressLabel').textContent=`${done} / ${EXIT_ITEMS.length} 확인됨`;
+    document.getElementById('exitRemark').disabled=locked;
+    document.getElementById('exitActionBtns').style.display=locked?'none':'flex';
+    document.getElementById('exitBackBtn').style.display='none';
+  }
+  renderApprovalBox('exit');
+  renderExitHistory();
+}
+function toggleExit(i){exitChecked[i]=!exitChecked[i];renderExitTab();}
+function toggleViewCheck(i){
+  const r=exitHistory[exitViewIndex];
+  if(!r.checks)r.checks=new Array(EXIT_ITEMS.length).fill(false);
+  r.checks[i]=!r.checks[i];
+  saveLS(LS.exit,exitHistory);
+  renderExitTab();
+  apiPost('updateExitChecks',{id:r.id,checks:r.checks});
+}
+function submitExit(){
+  const author=document.getElementById('exitAuthor').value.trim();
+  const dept=document.getElementById('exitDept').value.trim();
+  const remark=document.getElementById('exitRemark').value.trim();
+  if(!author){showToast('작성자를 입력해주세요','⚠️');return;}
+  // 선택하지 않은 항목이 있어도 제출 가능 (필수값 아님)
+  const now=new Date();
+  const id=Date.now();
+  const record={id,date:today(),time:now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}),author,dept,remark,checks:[...exitChecked]};
+  exitHistory.unshift(record);
+  saveLS(LS.exit,exitHistory);
+  exitChecked=new Array(EXIT_ITEMS.length).fill(false);
+  document.getElementById('exitRemark').value='';
+  showToast('퇴실 체크 제출 완료!','✅');renderExitTab();
+  apiPost('submitExit',record);
+}
+function resetExit(){exitChecked=new Array(EXIT_ITEMS.length).fill(false);document.getElementById('exitRemark').value='';renderExitTab();}
+function backToToday(){exitViewIndex=null;renderExitTab();}
+function viewExitRecord(i){exitViewIndex=i;renderExitTab();window.scrollTo({top:0,behavior:'smooth'});}
+function renderExitHistory(){
+  const el=document.getElementById('exitHistory');
+  if(!exitHistory.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">제출 이력 없음</div>`;return;}
+  el.innerHTML=exitHistory.map((r,i)=>{
+    const locked=isDateLocked(r.date);
+    const done=(r.checks||[]).filter(Boolean).length;
+    return`<div class="exit-record" style="cursor:pointer;${exitViewIndex===i?'border:1.5px solid var(--teal)':''}" onclick="viewExitRecord(${i})">
+      <div class="er-time">${r.date}<br>${r.time}</div>
+      <div><div class="er-name">${r.author}${locked?' 🔒':''}</div>${r.dept?`<div style="font-size:9px;color:var(--text3)">${r.dept}</div>`:''}</div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <span class="badge ${done===EXIT_ITEMS.length?'badge-green':'badge-amber'}">${done}/${EXIT_ITEMS.length}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderExitLockList(){
+  const el=document.getElementById('exitLockList');
+  if(!exitLocks.length){el.innerHTML='';return;}
+  el.innerHTML='🔒 잠금 기간: '+exitLocks.map(l=>`${l.start}~${l.end}`).join(', ');
+}
+function openExitLockApproval(){
+  const s=document.getElementById('exitLockStart').value;
+  const e=document.getElementById('exitLockEnd').value;
+  if(!s||!e||s>e){showToast('올바른 기간을 선택해주세요','⚠️');return;}
+  pendingApproval={sheet:'exit_lock',role:null,lockRange:{start:s,end:e}};
+  document.getElementById('approvalRoleLabel').textContent=`${s} ~ ${e} 기간 결재 완료(잠금)`;
+  document.getElementById('approvalName').value='';
+  document.getElementById('approvalPw').value='';
+  document.getElementById('approvalError').style.display='none';
+  document.getElementById('approvalModal').style.display='flex';
+  setTimeout(()=>document.getElementById('approvalName').focus(),100);
+}
+
+/* ══ TAB 4: 기계실 ══ */
+function renderMachineTab(){
+  const y=inspMonth.getFullYear();const m=inspMonth.getMonth();
+  document.getElementById('inspMonthLabel').textContent=`${y}년 ${m+1}월`;
+  const weeks=getWeeksOfMonth(y,m);
+  const key=`${y}-${String(m+1).padStart(2,'0')}`;
+  document.getElementById('equipList').innerHTML=EQUIP_LIST.map(eq=>`
+    <div class="equip-item ${selectedEquip===eq?'sel':''}" onclick="selEquip('${eq}')">${eq}</div>`).join('');
+  // 작성자/부서 (월별)
+  const meta=inspMeta[key]||{};
+  document.getElementById('inspAuthor').value=meta.author||'';
+  document.getElementById('inspDept').value=meta.dept||'';
+
+  const fixedChecks=EQUIP_CHECKS[selectedEquip]||[];
+  const customList=(inspCustom[key]&&inspCustom[key][selectedEquip])||[]; // [{idx,text}]
+  // 고정 항목: idx=위치(0..), 추가 항목: idx=1000+ (고유값)
+  const items=fixedChecks.map((t,i)=>({idx:i,text:t,custom:false}))
+    .concat(customList.map(c=>({idx:c.idx,text:c.text,custom:true})));
+  const data=inspData[key]||{};
+  let html='<thead><tr><th class="th-item">점검 항목</th>';
+  weeks.forEach((w,wi)=>{html+=`<th style="min-width:90px;text-align:center">${wi+1}주차<br><span style="font-size:9px;color:var(--text3)">${w.label}</span></th>`;});
+  html+=`<th style="min-width:140px;text-align:left">특이사항</th><th style="width:30px"></th></tr></thead><tbody>`;
+  items.forEach((item,pos)=>{
+    const idx=item.idx;
+    html+=`<tr><td class="td-item">${pos+1}. ${item.text}${item.custom?' <span style="color:var(--purple);font-size:9px">(추가)</span>':''}</td>`;
+    weeks.forEach((w,wi)=>{
+      const ck=`${selectedEquip}-${idx}-${wi}`;const val=data[ck]||'';
+      html+=`<td style="text-align:center;padding:4px">
+        <div class="ox-toggle">
+          <button class="ox-btn ${val==='O'?'O':''}" onclick="setInsp('${key}','${selectedEquip}',${idx},${wi},'O','${item.text.replace(/'/g,"\\'")}',${item.custom},this)">O</button>
+          <button class="ox-btn ${val==='X'?'X':''}" onclick="setInsp('${key}','${selectedEquip}',${idx},${wi},'X','${item.text.replace(/'/g,"\\'")}',${item.custom},this)">X</button>
+        </div>
+      </td>`;
+    });
+    const nk=`${selectedEquip}-note-${idx}`;
+    html+=`<td style="padding:4px"><input class="note-input form-input" style="font-size:10px" type="text" placeholder="특이사항" value="${data[nk]||''}" onchange="setInspNote('${key}','${selectedEquip}',${idx},this.value)"></td>`;
+    html+=`<td style="text-align:center">${item.custom?`<button onclick="removeCustomItem(${idx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:12px">✕</button>`:''}</td>`;
+    html+='</tr>';
+  });
+  html+=`<tr style="background:var(--surface2)"><td class="td-item" style="font-weight:700;color:var(--teal)">✅ 이번주 점검 완료 확인</td>`;
+  weeks.forEach((w,wi)=>{const dk=`done-${wi}`;const isDone=data[dk];
+    html+=`<td style="text-align:center;padding:4px"><button class="ox-btn ${isDone?'O':''}" style="width:56px" onclick="toggleInspDone('${key}',${wi},this)">${isDone?'완료':'—'}</button></td>`;
+  });
+  html+=`<td></td><td></td></tr></tbody>`;
+  document.getElementById('inspGrid').innerHTML=html;
+  renderApprovalBox('mach');
+}
+function saveInspMeta(){
+  const key=`${inspMonth.getFullYear()}-${String(inspMonth.getMonth()+1).padStart(2,'0')}`;
+  if(!inspMeta[key])inspMeta[key]={};
+  inspMeta[key].author=document.getElementById('inspAuthor').value;
+  inspMeta[key].dept=document.getElementById('inspDept').value;
+  saveLS(LS.inspMeta,inspMeta);
+  apiPost('saveInspMeta',{month:key,author:inspMeta[key].author,dept:inspMeta[key].dept});
+}
+function addCustomItem(){
+  const input=document.getElementById('customItemInput');
+  const val=input.value.trim();
+  if(!val){showToast('점검 항목을 입력해주세요','⚠️');return;}
+  const key=`${inspMonth.getFullYear()}-${String(inspMonth.getMonth()+1).padStart(2,'0')}`;
+  if(!inspCustom[key])inspCustom[key]={};
+  if(!inspCustom[key][selectedEquip])inspCustom[key][selectedEquip]=[];
+  const newIdx=1000+Date.now()%1000000; // 고유 idx (충돌 방지)
+  inspCustom[key][selectedEquip].push({idx:newIdx,text:val});
+  saveLS(LS.inspCustom,inspCustom);
+  input.value='';
+  showToast('점검 항목이 추가되었습니다','✅');
+  renderMachineTab();
+  apiPost('addCustomInspItem',{month:key,equip:selectedEquip,text:val,idx:newIdx});
+}
+function removeCustomItem(idx){
+  const key=`${inspMonth.getFullYear()}-${String(inspMonth.getMonth()+1).padStart(2,'0')}`;
+  if(inspCustom[key]&&inspCustom[key][selectedEquip]){
+    inspCustom[key][selectedEquip]=inspCustom[key][selectedEquip].filter(c=>c.idx!==idx);
+    saveLS(LS.inspCustom,inspCustom);
+    renderMachineTab();
+    apiPost('removeCustomInspItem',{month:key,equip:selectedEquip,idx});
+  }
+}
+function selEquip(eq){selectedEquip=eq;renderMachineTab();}
+function setInsp(key,equip,idx,week,val,itemText,isCustom,btn){
+  const ck=`${equip}-${idx}-${week}`;
+  if(!inspData[key])inspData[key]={};
+  inspData[key][ck]=inspData[key][ck]===val?'':val;
+  const finalVal=inspData[key][ck];
+  btn.closest('.ox-toggle').querySelectorAll('.ox-btn').forEach(b=>b.classList.remove('O','X'));
+  if(finalVal)btn.classList.add(finalVal);
+  saveLS(LS.insp,inspData);
+  apiPost('setInspCell',{month:key,equip,itemIdx:idx,week,value:finalVal,itemText,itemType:isCustom?'추가':'고정'});
+}
+function setInspNote(key,equip,idx,val){
+  const nk=`${equip}-note-${idx}`;
+  if(!inspData[key])inspData[key]={};
+  inspData[key][nk]=val;
+  saveLS(LS.insp,inspData);
+  apiPost('setInspNote',{month:key,equip,itemIdx:idx,note:val});
+}
+function toggleInspDone(key,week,btn){
+  const dk=`done-${week}`;
+  if(!inspData[key])inspData[key]={};
+  inspData[key][dk]=!inspData[key][dk];
+  btn.textContent=inspData[key][dk]?'완료':'—';
+  btn.classList.toggle('O',!!inspData[key][dk]);
+  saveLS(LS.insp,inspData);
+  apiPost('setInspDone',{month:key,week,value:!!inspData[key][dk]});
+}
+function changeInspMonth(d){inspMonth.setMonth(inspMonth.getMonth()+d);renderMachineTab();}
+function saveInsp(){saveLS(LS.insp,inspData);showToast('기계실 점검 저장 완료','✅');}
+
+/* ══ 결재 시스템 ══ */
+const ROLE_NAMES=['기안','검토','승인'];
+function renderApprovalBox(sheet){
+  const key=getApprovalKey(sheet);
+  const data=approvalData[sheet]||{};
+  for(let i=0;i<3;i++){
+    const sign=data[`${key}-${i}`];
+    const nameEl=document.getElementById(`${sheet}SignName${i}`);
+    const dateEl=document.getElementById(`${sheet}SignDate${i}`);
+    const btnEl=document.getElementById(`${sheet}SignBtn${i}`);
+    const boxEl=document.getElementById(`${sheet}Sign${i}`);
+    if(sign){
+      nameEl.textContent=sign.name;nameEl.style.display='block';
+      dateEl.textContent=sign.date;dateEl.style.display='block';
+      if(btnEl)btnEl.style.display='none';
+      if(boxEl)boxEl.classList.add('signed');
+    } else {
+      if(nameEl)nameEl.style.display='none';
+      if(dateEl)dateEl.style.display='none';
+      if(btnEl){btnEl.style.display='block';btnEl.textContent='서명';}
+      if(boxEl)boxEl.classList.remove('signed');
+    }
+  }
+}
+function getApprovalKey(sheet){
+  if(sheet==='cs'){const y=checkMonth.getFullYear();const m=checkMonth.getMonth();return`${y}-${String(m+1).padStart(2,'0')}`;}
+  if(sheet==='mach'){const y=inspMonth.getFullYear();const m=inspMonth.getMonth();return`${y}-${String(m+1).padStart(2,'0')}`;}
+  return today().slice(0,7); // exit: 이번달
+}
+function openApproval(sheet,role){
+  pendingApproval={sheet,role};
+  document.getElementById('approvalRoleLabel').textContent=ROLE_NAMES[role];
+  document.getElementById('approvalName').value='';
+  document.getElementById('approvalPw').value='';
+  document.getElementById('approvalError').style.display='none';
+  document.getElementById('approvalModal').style.display='flex';
+  setTimeout(()=>document.getElementById('approvalName').focus(),100);
+}
+function closeApproval(){document.getElementById('approvalModal').style.display='none';pendingApproval={sheet:null,role:null};}
+function submitApproval(){
+  const pw=document.getElementById('approvalPw').value;
+  const name=document.getElementById('approvalName').value.trim();
+  if(pw!==APPROVAL_PW){document.getElementById('approvalError').style.display='block';return;}
+  if(!name){showToast('승인자 이름을 입력해주세요','⚠️');return;}
+
+  if(pendingApproval.sheet==='exit_lock'){
+    const{start,end}=pendingApproval.lockRange;
+    const lockRec={start,end,name,date:today()};
+    exitLocks.push(lockRec);
+    saveLS(LS.exitLocks,exitLocks);
+    closeApproval();
+    renderExitTab();
+    showToast(`${start} ~ ${end} 기간이 결재 완료되어 잠금 처리되었습니다`,'🔒');
+    apiPost('addExitLock',lockRec);
+    return;
+  }
+
+  const{sheet,role}=pendingApproval;
+  const key=getApprovalKey(sheet);
+  if(!approvalData[sheet])approvalData[sheet]={};
+  approvalData[sheet][`${key}-${role}`]={name,date:today()};
+  saveLS(LS.approval,approvalData);
+  closeApproval();
+  renderApprovalBox(sheet);
+  showToast(`${ROLE_NAMES[role]} 결재 완료`,'✅');
+  apiPost('signApproval',{sheet,month:key,role,name,date:today()});
+}
+
+window.addEventListener('load',()=>{
+  renderDashboard();
+  if(API_URL){
+    loadAllFromSheet();
+    setInterval(loadAllFromSheet,30000); // 30초마다 자동 새로고침
+  } else {
+    setSyncStatus('err','⚠ 로컬 모드');
+  }
+});
+</script>
+</body>
+</html>
