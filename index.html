@@ -426,8 +426,6 @@ body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:var(--bg);color:
           <span class="month-display" id="checkMonthLabel"></span>
           <button class="month-nav-btn" onclick="changeCheckMonth(1)">▶</button>
         </div>
-        <div style="font-size:11px;color:var(--text2)">소속: 스크러버개발팀</div>
-        <div style="font-size:10px;color:var(--text3)" id="csSetDate"></div>
       </div>
       <div class="cs-meta-row">
         <div style="display:flex;align-items:center;gap:6px">
@@ -996,7 +994,6 @@ function renderCheckSheet(){
   const y=checkMonth.getFullYear();const m=checkMonth.getMonth();
   const key=`${y}-${String(m+1).padStart(2,'0')}`;
   document.getElementById('checkMonthLabel').textContent=`${y}년 ${m+1}월`;
-  document.getElementById('csSetDate').textContent=`제정일자 : 2023.02.09`;
   renderCheckLockList();
   const meta=checkMeta[key]||{};
   document.getElementById('csAuthor').value=meta.author||'';
