@@ -730,7 +730,7 @@ body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:var(--bg);color:
     <div style="font-size:10px;color:var(--text3);margin-top:8px" id="cylHint"></div>
   </div>
   <div class="card"><div class="list-wrap"><table class="list-table" style="min-width:980px">
-    <thead><tr><th>위치</th><th>가스명</th><th>Size</th><th>농도</th><th>수량</th><th>충진기한</th><th>상태</th><th style="text-align:center">MSDS</th><th>첨부 파일</th><th>비고</th><th></th></tr></thead>
+    <thead><tr><th>위치</th><th>가스명</th><th>Size</th><th>농도</th><th>수량</th><th>충진기한</th><th>상태</th><th style="text-align:center">MSDS</th><th>첨부 파일</th><th>비고</th><th>등록자</th><th></th></tr></thead>
     <tbody id="cylTbody"></tbody>
   </table></div></div>
 </div>
@@ -745,7 +745,7 @@ body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:var(--bg);color:
     <div style="font-size:10px;color:var(--text3);margin-top:8px">MSDS · 안전표지 파일(PDF, 이미지, 엑셀, 문서 등)을 등록/수정 창에서 업로드하고, 목록의 파일 칩을 눌러 보기 · ⬇ 로 다운로드할 수 있습니다.</div>
   </div>
   <div class="card"><div class="list-wrap"><table class="list-table">
-    <thead><tr><th>물질명</th><th>보관 위치</th><th style="text-align:center">MSDS</th><th>MSDS / 안전표지 파일</th><th>비고</th><th></th></tr></thead>
+    <thead><tr><th>물질명</th><th>보관 위치</th><th style="text-align:center">MSDS</th><th>MSDS / 안전표지 파일</th><th>비고</th><th>등록자</th><th></th></tr></thead>
     <tbody id="chemTbody"></tbody>
   </table></div></div>
 </div>
@@ -1836,7 +1836,7 @@ function downloadMachineExcel(){
    공통 설정 / 상태
    ===================================================== */
 const ITEM_EDIT_PW='1234';                 // 기계실 점검항목 문구 수정 시 비밀번호
-const TEAM_LIST=['개발혁신팀','Scrubber 개발팀','DCS 개발팀','Chiller 개발팀'];  // 정화통 '부서' 선택 목록 (팀 추가/변경 시 여기만 수정)
+const TEAM_LIST=['스크러버개발1팀','스크러버개발2팀','스크러버개발3팀'];  // 정화통 '부서' 선택 목록 (팀 추가/변경 시 여기만 수정)
 const CART_ALERT_DAYS=10;                  // 정화통 만료 N일 전부터 알림
 const CYL_ALERT_DAYS=30;                   // 실린더 충진기한 N일 전부터 알림
 const MAX_FILE_MB=5;                       // 첨부파일 1개당 최대 용량
@@ -1995,6 +1995,7 @@ const REC_DEFS={
       {k:'refill',l:'충진기한 (연-월)',type:'month'},
       {k:'msds',l:'MSDS',type:'ox'},
       {k:'remark',l:'비고'},
+      {k:'registrant',l:'등록자 *',ph:'등록자 이름'},
     ]},
   chem:{title:'화학물질',save:'saveChemical',del:'deleteChemical',required:'name',reqLabel:'물질명',
     fields:[
@@ -2002,6 +2003,7 @@ const REC_DEFS={
       {k:'location',l:'보관 위치',list:true},
       {k:'msds',l:'MSDS',type:'ox'},
       {k:'remark',l:'비고'},
+      {k:'registrant',l:'등록자 *',ph:'등록자 이름'},
     ]},
 };
 let recCtx=null;
@@ -2023,7 +2025,7 @@ function openRecModal(type,id){
   el('recModalTitle').textContent=`${def.title} ${rec?'수정':'등록'}`;
   let h='<div class="rec-grid">';
   def.fields.forEach(f=>{
-    const v=rec?(rec[f.k]==null?'':rec[f.k]):(f.k==='msds'?'X':'');
+    const v=rec?(rec[f.k]==null?'':rec[f.k]):(f.k==='msds'?'X':f.k==='registrant'?(loadLS('scr_registrant')||''):'');
     let input;
     if(f.type==='ox')input=`<select class="form-select" id="rf_${f.k}"><option value="O" ${v==='O'?'selected':''}>O (있음)</option><option value="X" ${v!=='O'?'selected':''}>X (없음)</option></select>`;
     else input=`<input class="form-input" id="rf_${f.k}" type="${f.type||'text'}" ${f.type==='number'?'min="0" step="1"':''} ${f.list?`list="dl_${type}_${f.k}"`:''} placeholder="${esc(f.ph||'')}" value="${esc(v)}">`;
@@ -2096,6 +2098,8 @@ async function saveRec(){
   const vals={};
   def.fields.forEach(f=>{vals[f.k]=(el('rf_'+f.k).value||'').trim();});
   if(!vals[def.required]){showToast(`${def.reqLabel}을(를) 입력해주세요`,'⚠️');return;}
+  if(!recCtx.id&&!vals.registrant){showToast('등록자 이름을 입력해주세요','⚠️');return;}
+  if(vals.registrant)saveLS('scr_registrant',vals.registrant);
   const staged=recCtx.staged.slice();
   if(staged.length&&!API_URL){showToast('파일 업로드는 구글 시트(API_URL) 연결 후 사용할 수 있습니다','⚠️');return;}
   const btn=el('recSaveBtn');btn.disabled=true;btn.textContent='저장 중...';
@@ -2171,7 +2175,7 @@ async function saveFileLocal(id){
 const cmpKo=(a,b)=>String(a==null?'':a).localeCompare(String(b==null?'':b),'ko',{numeric:true,sensitivity:'base'});
 function renderCylinders(){
   const q=(el('cylSearch').value||'').trim().toLowerCase();
-  const list=DB.cyl.filter(r=>!q||[r.location,r.gas,r.size,r.conc,r.remark].join(' ').toLowerCase().includes(q))
+  const list=DB.cyl.filter(r=>!q||[r.location,r.gas,r.size,r.conc,r.remark,r.registrant].join(' ').toLowerCase().includes(q))
     .sort((a,b)=>cmpKo(a.location,b.location)||cmpKo(a.gas,b.gas)||cmpKo(a.size,b.size)||cmpKo(a.conc,b.conc)
       ||((Number(a.qty)||0)-(Number(b.qty)||0))||cmpKo(a.refill,b.refill));
   el('cylTbody').innerHTML=list.map(r=>{
@@ -2180,11 +2184,11 @@ function renderCylinders(){
     return`<tr class="${info.state==='over'?'row-over':info.state==='soon'?'row-soon':''}">
       <td>${esc(r.location)}</td><td><strong>${esc(r.gas)}</strong></td><td>${esc(r.size)}</td><td>${esc(r.conc)}</td><td>${esc(qty)}</td>
       <td style="font-family:'DM Mono',monospace">${esc(r.refill)}</td><td>${dueBadge(info,'cyl')}</td>
-      <td style="text-align:center">${msdsBadge(r)}</td><td style="min-width:140px">${fileChips(r)}</td><td>${esc(r.remark)}</td>
+      <td style="text-align:center">${msdsBadge(r)}</td><td style="min-width:140px">${fileChips(r)}</td><td>${esc(r.remark)}</td><td>${esc(r.registrant)}</td>
       <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openRecModal('cyl','${esc(r.id)}')">수정</button>
         <button onclick="delRec('cyl','${esc(r.id)}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px" title="삭제">✕</button></td>
     </tr>`;
-  }).join('')||`<tr><td colspan="11" style="text-align:center;padding:18px;color:var(--text3)">등록된 실린더가 없습니다</td></tr>`;
+  }).join('')||`<tr><td colspan="12" style="text-align:center;padding:18px;color:var(--text3)">등록된 실린더가 없습니다</td></tr>`;
   const st=DB.cyl.map(r=>dueInfo(cylDeadline(r),CYL_ALERT_DAYS).state);
   el('cylSummary').textContent=`총 ${DB.cyl.length}건 · 경과 ${st.filter(s=>s==='over').length} · 임박 ${st.filter(s=>s==='soon').length}`;
   el('cylHint').textContent=`정렬: 위치 → 가스명 → Size → 농도 → 수량 → 충진기한 · 충진기한 ${CYL_ALERT_DAYS}일 전부터 대시보드에 알림 (연-월로 입력한 경우 해당 월 말일 기준)`;
@@ -2194,14 +2198,14 @@ function renderCylinders(){
 /* ── 화학물질 목록 ── */
 function renderChemicals(){
   const q=(el('chemSearch').value||'').trim().toLowerCase();
-  const list=DB.chem.filter(r=>!q||[r.name,r.location,r.remark].join(' ').toLowerCase().includes(q))
+  const list=DB.chem.filter(r=>!q||[r.name,r.location,r.remark,r.registrant].join(' ').toLowerCase().includes(q))
     .sort((a,b)=>cmpKo(a.name,b.name));
   el('chemTbody').innerHTML=list.map(r=>`<tr>
       <td><strong>${esc(r.name)}</strong></td><td>${esc(r.location)}</td><td style="text-align:center">${msdsBadge(r)}</td>
-      <td style="min-width:180px">${fileChips(r)}</td><td>${esc(r.remark)}</td>
+      <td style="min-width:180px">${fileChips(r)}</td><td>${esc(r.remark)}</td><td>${esc(r.registrant)}</td>
       <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openRecModal('chem','${esc(r.id)}')">수정</button>
         <button onclick="delRec('chem','${esc(r.id)}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px" title="삭제">✕</button></td>
-    </tr>`).join('')||`<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text3)">등록된 화학물질이 없습니다</td></tr>`;
+    </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--text3)">등록된 화학물질이 없습니다</td></tr>`;
   el('chemSummary').textContent=`총 ${DB.chem.length}건`;
 }
 
